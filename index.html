@@ -44,6 +44,9 @@
       color: white;
       align-self: flex-end;
     }
+    .confirm-box {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -74,11 +77,10 @@
     const input = document.getElementById("userInput");
     const messages = document.getElementById("messages");
 
-    // Track conversation steps
     let step = 0;
     let meetingData = {};
+    let confirming = false;
 
-    // Bot questions flow
     const questions = [
       "Great! What’s your email?",
       "Please pick a date for the meeting.",
@@ -102,7 +104,7 @@
       else if (step === 3) meetingData.time = userText;
       else if (step === 4) meetingData.purpose = userText;
 
-      // Ask next question OR show summary
+      // Ask next question or show confirmation
       if (step < questions.length) {
         step++;
         setTimeout(() => {
@@ -110,17 +112,7 @@
           switchInput(step);
         }, 500);
       } else {
-        setTimeout(() => {
-          addMessage(
-            `✅ <b>Meeting Scheduled</b><br><br>
-             👤 ${meetingData.name}<br>
-             📧 ${meetingData.email}<br>
-             📅 ${meetingData.date} at ${meetingData.time}<br>
-             📝 ${meetingData.purpose}`,
-            "bot"
-          );
-          input.disabled = true; // end chat
-        }, 500);
+        showConfirmation();
       }
     });
 
@@ -133,7 +125,7 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    // Switch input type based on step
+    // Switch input type
     function switchInput(step) {
       if (step === 1) {
         input.type = "email";
@@ -148,6 +140,41 @@
         input.type = "text";
         input.placeholder = "Type here...";
       }
+    }
+
+    // Show confirmation summary
+    function showConfirmation() {
+      confirming = true;
+      form.classList.add("d-none");
+
+      const confirmBox = document.createElement("div");
+      confirmBox.classList.add("message", "bot", "confirm-box");
+      confirmBox.innerHTML = `
+        <b>📋 Please confirm your meeting details:</b><br><br>
+        👤 ${meetingData.name}<br>
+        📧 ${meetingData.email}<br>
+        📅 ${meetingData.date} at ${meetingData.time}<br>
+        📝 ${meetingData.purpose}<br><br>
+        <button class="btn btn-success btn-sm me-2" onclick="confirmMeeting()">Confirm</button>
+        <button class="btn btn-warning btn-sm" onclick="editMeeting()">Edit</button>
+      `;
+      messages.appendChild(confirmBox);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Confirm meeting
+    function confirmMeeting() {
+      addMessage("✅ Meeting confirmed! 🎉", "bot");
+    }
+
+    // Edit meeting (reset form)
+    function editMeeting() {
+      form.classList.remove("d-none");
+      step = 0;
+      meetingData = {};
+      input.type = "text";
+      input.placeholder = "Type your response...";
+      addMessage("Okay, let’s start over. What’s your name?", "bot");
     }
   </script>
 
