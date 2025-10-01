@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Assistant Scheduler</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+    .chat-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      height: 500px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+    .message {
+      padding: 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+      max-width: 75%;
+    }
+    .bot {
+      background: #e9ecef;
+      align-self: flex-start;
+    }
+    .user {
+      background: #0d6efd;
+      color: white;
+      align-self: flex-end;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">🤖 Virtual Assistant</a>
+    </div>
+  </nav>
+
+  <!-- Chat Container -->
+  <div class="chat-container">
+    <div class="messages" id="messages">
+      <div class="message bot">Hello! I’m your meeting assistant. What’s your name?</div>
+    </div>
+
+    <!-- Input -->
+    <form id="chatForm" class="d-flex">
+      <input type="text" class="form-control me-2" id="userInput" placeholder="Type your response..." required>
+      <button class="btn btn-primary">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("userInput");
+    const messages = document.getElementById("messages");
+
+    let step = 0;
+    let meetingData = {};
+
+    const questions = [
+      "Great! What’s your email?",
+      "What date would you like to schedule the meeting?",
+      "What time?",
+      "What’s the purpose of the meeting?"
+    ];
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const userText = input.value;
+      input.value = "";
+
+      // Show user message
+      addMessage(userText, "user");
+
+      // Save data based on step
+      if (step === 0) meetingData.name = userText;
+      else if (step === 1) meetingData.email = userText;
+      else if (step === 2) meetingData.date = userText;
+      else if (step === 3) meetingData.time = userText;
+      else if (step === 4) meetingData.purpose = userText;
+
+      // Bot response
+      if (step < questions.length) {
+        setTimeout(() => {
+          addMessage(questions[step], "bot");
+        }, 500);
+      } else {
+        setTimeout(() => {
+          addMessage(
+            `✅ Meeting Scheduled for <b>${meetingData.name}</b><br>
+             📧 ${meetingData.email}<br>
+             📅 ${meetingData.date} at ${meetingData.time}<br>
+             📝 ${meetingData.purpose}`,
+            "bot"
+          );
+        }, 500);
+      }
+
+      step++;
+    });
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.classList.add("message", sender);
+      msg.innerHTML = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
+  </script>
+
+</body>
+</html>
