@@ -25,12 +25,15 @@
       flex: 1;
       overflow-y: auto;
       margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
     }
     .message {
-      padding: 10px;
-      border-radius: 10px;
+      padding: 10px 15px;
+      border-radius: 15px;
       margin: 5px 0;
       max-width: 75%;
+      word-wrap: break-word;
     }
     .bot {
       background: #e9ecef;
@@ -55,6 +58,7 @@
   <!-- Chat Container -->
   <div class="chat-container">
     <div class="messages" id="messages">
+      <!-- First bot message -->
       <div class="message bot">Hello! I’m your meeting assistant. What’s your name?</div>
     </div>
 
@@ -70,57 +74,80 @@
     const input = document.getElementById("userInput");
     const messages = document.getElementById("messages");
 
+    // Track conversation steps
     let step = 0;
     let meetingData = {};
 
+    // Bot questions flow
     const questions = [
       "Great! What’s your email?",
-      "What date would you like to schedule the meeting?",
-      "What time?",
-      "What’s the purpose of the meeting?"
+      "Please pick a date for the meeting.",
+      "Now choose a time.",
+      "Finally, what’s the purpose of the meeting?"
     ];
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const userText = input.value;
+      const userText = input.value.trim();
+      if (!userText) return;
       input.value = "";
 
-      // Show user message
+      // Show user reply
       addMessage(userText, "user");
 
-      // Save data based on step
+      // Save response
       if (step === 0) meetingData.name = userText;
       else if (step === 1) meetingData.email = userText;
       else if (step === 2) meetingData.date = userText;
       else if (step === 3) meetingData.time = userText;
       else if (step === 4) meetingData.purpose = userText;
 
-      // Bot response
+      // Ask next question OR show summary
       if (step < questions.length) {
+        step++;
         setTimeout(() => {
-          addMessage(questions[step], "bot");
+          addMessage(questions[step - 1], "bot");
+          switchInput(step);
         }, 500);
       } else {
         setTimeout(() => {
           addMessage(
-            `✅ Meeting Scheduled for <b>${meetingData.name}</b><br>
+            `✅ <b>Meeting Scheduled</b><br><br>
+             👤 ${meetingData.name}<br>
              📧 ${meetingData.email}<br>
              📅 ${meetingData.date} at ${meetingData.time}<br>
              📝 ${meetingData.purpose}`,
             "bot"
           );
+          input.disabled = true; // end chat
         }, 500);
       }
-
-      step++;
     });
 
+    // Add message to chat
     function addMessage(text, sender) {
       const msg = document.createElement("div");
       msg.classList.add("message", sender);
       msg.innerHTML = text;
       messages.appendChild(msg);
       messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Switch input type based on step
+    function switchInput(step) {
+      if (step === 1) {
+        input.type = "email";
+        input.placeholder = "Enter your email...";
+      } else if (step === 2) {
+        input.type = "date";
+        input.placeholder = "";
+      } else if (step === 3) {
+        input.type = "time";
+        input.placeholder = "";
+      } else {
+        input.type = "text";
+        input.placeholder = "Type here...";
+      }
     }
   </script>
 
