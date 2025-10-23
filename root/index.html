@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Scheduler</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    body {
+      background: #f5f7fa;
+      font-family: "Poppins", sans-serif;
+    }
+    .navbar {
+      background: #0d6efd !important;
+    }
+    .navbar-brand {
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: white !important;
+    }
+    .btn-outline-light {
+      border-color: white !important;
+    }
+
+    .chat-container {
+      max-width: 650px;
+      margin: 60px auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      height: 550px;
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      padding-right: 10px;
+    }
+    .message {
+      padding: 12px 16px;
+      border-radius: 15px;
+      margin: 5px 0;
+      max-width: 80%;
+      line-height: 1.4;
+      font-size: 15px;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .bot {
+      background: #eef2f7;
+      align-self: flex-start;
+    }
+    .user {
+      background: #0d6efd;
+      color: white;
+      align-self: flex-end;
+    }
+    .confirm-box {
+      background: #e9f8ec;
+      border-left: 4px solid #28a745;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    input[type="text"], input[type="date"], input[type="time"] {
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand" href="#">📅 Meeting Scheduler</a>
+      <a href="profile.html" class="btn btn-outline-light btn-sm">Profile</a>
+    </div>
+  </nav>
+
+  <!-- Chat Section -->
+  <div class="chat-container">
+    <div class="messages" id="messages">
+      <div class="message bot">Hello 👋 <span id="username">there</span>! Ready to schedule a new meeting?</div>
+      <div class="message bot">Please select a date for your meeting.</div>
+    </div>
+
+    <form id="chatForm" class="d-flex">
+      <input type="date" class="form-control me-2" id="userInput" required>
+      <button class="btn btn-primary">Next</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("userInput");
+    const messages = document.getElementById("messages");
+    let step = 1;
+    let meetingData = {};
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) document.getElementById("username").textContent = user.name.split(" ")[0];
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const userText = input.value.trim();
+      if (!userText) return;
+
+      addMessage(userText, "user");
+      input.value = "";
+
+      if (step === 1) {
+        meetingData.date = userText;
+        addMessage("Now please select a time for your meeting.", "bot");
+        input.type = "time";
+        step++;
+      } else if (step === 2) {
+        meetingData.time = userText;
+        addMessage("Great! What’s the purpose of this meeting?", "bot");
+        input.type = "text";
+        input.placeholder = "e.g., Client strategy call";
+        step++;
+      } else if (step === 3) {
+        meetingData.purpose = userText;
+        showConfirmation();
+      }
+    });
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.classList.add("message", sender);
+      msg.innerHTML = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showConfirmation() {
+      form.classList.add("d-none");
+      const confirmBox = document.createElement("div");
+      confirmBox.classList.add("message", "bot", "confirm-box");
+
+      confirmBox.innerHTML = `
+        <b>✅ Confirm your meeting details:</b><br><br>
+        👤 <b>${user ? user.name : "Unknown User"}</b><br>
+        📧 ${user ? user.email : "No email found"}<br>
+        📅 ${meetingData.date} at ${meetingData.time}<br>
+        📝 ${meetingData.purpose}<br><br>
+        <button class="btn btn-success btn-sm me-2" onclick="confirmMeeting()">Confirm</button>
+        <button class="btn btn-warning btn-sm" onclick="restart()">Edit</button>
+      `;
+      messages.appendChild(confirmBox);
+    }
+
+    function confirmMeeting() {
+      if (!user) {
+        addMessage("⚠️ Please sign in from your profile first before saving meetings.", "bot");
+        return;
+      }
+
+      saveMeeting(meetingData);
+      addMessage("🎉 Your meeting has been saved successfully! (Google Calendar sync coming soon)", "bot");
+    }
+
+    function restart() {
+      form.classList.remove("d-none");
+      input.type = "date";
+      input.placeholder = "";
+      step = 1;
+      meetingData = {};
+      addMessage("Alright, let’s start again. Please choose a new meeting date.", "bot");
+    }
+
+    function saveMeeting(data) {
+      const userMeetings = JSON.parse(localStorage.getItem("meetings")) || [];
+      const newMeeting = {
+        ...data,
+        user: user ? user.email : "guest",
+        createdAt: new Date().toISOString()
+      };
+      userMeetings.push(newMeeting);
+      localStorage.setItem("meetings", JSON.stringify(userMeetings));
+    }
+  </script>
+<!-- Google API Client Library -->
+<script src="https://apis.google.com/js/api.js"></script>
+</body>
+</html>
